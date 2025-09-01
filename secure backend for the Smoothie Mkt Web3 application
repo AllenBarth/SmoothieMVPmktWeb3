@@ -1,0 +1,139 @@
+// api/create-recipe.js
+// This serverless function acts as a secure backend for the Smoothie Mkt Web3 application.
+// It performs two key tasks:
+// 1. Calls the Gemini API to generate AI content.
+// 2. Uploads private recipe data to Pinata (IPFS).
+// All API keys are securely stored as environment variables on Vercel.
+
+const axios = require('axios');
+
+// --- Due Diligence: Secure Variable Loading ---
+// These variables are loaded from Vercel's environment variables.
+// This is a crucial security measure to prevent API keys from being exposed in the client-side code.
+const geminiApiKey = process.env.GEMINI_API_KEY;
+const pinataApiKey = process.env.PINATA_API_KEY;
+const pinataSecretKey = process.env.PINATA_SECRET_API_KEY;
+
+// Placeholder for a Chainlink Functions call to get real-time prices.
+// This is the most complex part of the MVP and is not a simple API call.
+// This function shows where a real implementation would go.
+async function getRealTimePrices(ingredients) {
+    // Due Diligence: This is a placeholder for a real Chainlink Functions call.
+    // In a production environment, this function would:
+    // 1. Make a request to a Chainlink Functions endpoint.
+    // 2. The Chainlink service would then execute a request to a commodity price API (e.g., Twelve Data, Polygon.io).
+    // 3. The price would be returned securely to this function.
+    
+    // For this MVP, we'll return a hardcoded, simulated price.
+    // The user must replace this with their Chainlink Functions logic.
+    console.warn("DUE DILIGENCE: This is a simulated price fetch. Please replace with a real Chainlink Functions call.");
+    
+    const simulatedPrices = {
+        "Green Tea": 0.50, "Nettle Tea": 0.60, "Licorice Tea": 0.55,
+        "Cranberry Juice": 1.20, "Dark Cherry Juice": 1.50, "Orange Juice": 1.00,
+        "Pomegranate Juice": 2.00, "Purple Grape Juice": 1.80,
+        "Apple": 0.75, "Banana": 0.50, "Berries": 1.75, "Mango": 1.50,
+        "Melon": 1.00, "Peach": 0.80, "Pear": 0.85, "Pineapple": 1.25,
+        "Avocado": 2.50, "Beet": 0.70, "Cucumber": 0.60,
+        "Dark leafy greens": 1.50, "Mint leaves": 0.40, "Zucchini": 0.65,
+        "Protein powder - 1 scoop": 3.00, "Whey powder - 2 T": 2.50,
+        "Whole oats - 1/2 C": 0.30, "Nut butter - 1 T": 0.90,
+        "Yogurt or kefir - 1/2 C": 0.70, "Soy powder - 2 T": 0.80,
+        "Flax Seeds": 0.25, "Ice": 0.05
+    };
+    
+    const ingredientPrices = {};
+    let totalCost = 0;
+    
+    for (const ingredient of ingredients) {
+        const price = simulatedPrices[ingredient] || 0;
+        ingredientPrices[ingredient] = price;
+        totalCost += price;
+    }
+    
+    return { ingredientPrices, totalCost };
+}
+
+
+module.exports = async (req, res) => {
+    // Due Diligence: Check for POST method to prevent unwanted requests.
+    if (req.method !== 'POST') {
+        return res.status(405).json({ error: 'Method Not Allowed' });
+    }
+
+    try {
+        const { recipeName, privateData } = req.body;
+        
+        // Due Diligence: Dynamically include ingredient quantities in the AI prompt.
+        const ingredientsWithQuantities = Object.entries(privateData.ingredients)
+            .flatMap(([category, items]) => items.map(item => `${item} (${category})`))
+            .join(', ');
+
+        const aiPrompt = `Based on the following smoothie ingredients and their categories, provide:
+            1. A two-sentence summary of the health benefits.
+            2. A three-sentence summary of the mixing details.
+            3. A creative brand name.
+            Ingredients: ${ingredientsWithQuantities}`;
+
+        // 1. Call Gemini API from the secure backend
+        const aiPayload = {
+            contents: [{ parts: [{ text: aiPrompt }] }],
+            generationConfig: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: "OBJECT",
+                    properties: {
+                        "generalDescription": { "type": "STRING" },
+                        "privateDescription": { "type": "STRING" },
+                        "brandName": { "type": "STRING" }
+                    },
+                    "required": ["generalDescription", "privateDescription", "brandName"]
+                }
+            }
+        };
+
+        const aiResponse = await axios.post(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${geminiApiKey}`,
+            aiPayload
+        );
+        const aiData = JSON.parse(aiResponse.data.candidates[0].content.parts[0].text);
+
+        // 2. Get real-time prices for the ingredients.
+        const { ingredientPrices, totalCost } = await getRealTimePrices(ingredientsWithQuantities.split(',').map(s => s.trim()));
+        
+        // 3. Combine the AI data and pricing data into a single payload.
+        const fullPrivateData = {
+            ...privateData,
+            privateDescription: aiData.privateDescription,
+            totalPrice: totalCost,
+            ingredientPrices: ingredientPrices
+        };
+
+        // 4. Upload private data to Pinata from the secure backend.
+        const pinataUrl = 'https://api.pinata.cloud/pinning/pinJSONToIPFS';
+        const pinataResponse = await axios.post(
+            pinataUrl,
+            fullPrivateData,
+            {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'pinata_api_key': pinataApiKey,
+                    'pinata_secret_api_key': pinataSecretKey
+                }
+            }
+        );
+        const ipfsCID = pinataResponse.data.IpfsHash;
+
+        // 5. Return the necessary on-chain data back to the frontend.
+        res.status(200).json({
+            recipeName: recipeName,
+            generalDescription: aiData.generalDescription,
+            brandName: aiData.brandName,
+            ipfsCID: ipfsCID
+        });
+
+    } catch (error) {
+        console.error("Error in serverless function:", error);
+        res.status(500).json({ error: "Failed to process recipe creation." });
+    }
+};
