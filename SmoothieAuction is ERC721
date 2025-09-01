@@ -1,0 +1,179 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@chainlink/contracts/src/v0.8/interfaces/KeeperCompatibleInterface.sol";
+
+// This contract is the core of the Smoothie Mkt Web3 application.
+// It manages the creation of recipes as XRC721 NFTs and facilitates a trustless English auction.
+// It is designed for the XDCtestnet.
+contract SmoothieAuction is ERC721, Ownable, KeeperCompatibleInterface {
+
+    // --- State Variables ---
+
+    // A unique, sequential ID for each player.
+    // This is a due diligence point: a global on-chain counter requires gas for each new player registration.
+    uint256 public nextPlayerId = 100000001;
+
+    // A unique, sequential ID for each recipe (NFT).
+    uint256 public nextRecipeId = 100000001;
+
+    // Mapping to store the sequential player ID for each wallet address.
+    mapping(address => uint256) public playerIDByAddress;
+
+    // Struct to hold on-chain data for each recipe.
+    struct Recipe {
+        uint256 creatorPlayerId;
+        string recipeName;
+        string generalDescription;
+        string brandName;
+        string ipfsCID;
+    }
+
+    // Mapping to store on-chain data for each recipe using its ID.
+    mapping(uint256 => Recipe) public recipes;
+
+    // Struct to manage the state of each auction.
+    struct Auction {
+        uint256 recipeId;
+        address payable highestBidder;
+        uint256 highestBid;
+        uint256 endTime;
+        bool ended;
+    }
+
+    // Mapping to store auction details by recipe ID.
+    mapping(uint256 => Auction) public auctions;
+
+    // Global, configurable variables for the auction, managed by the contract owner.
+    uint256 public initialRecipePrice = 500 * 10**18; // Initially 500 XDC in wei
+    uint256 public auctionTimeLimit = 24 * 60 * 60; // 24 hours in seconds
+
+    // --- Events ---
+
+    // Emitted when a new player registers.
+    event PlayerRegistered(address indexed walletAddress, uint256 playerID);
+
+    // Emitted when a new recipe NFT is created and a new auction starts.
+    event AuctionCreated(uint256 indexed recipeId, address indexed creator, uint256 initialPrice, uint256 endTime);
+
+    // Emitted when a bid is successfully placed.
+    event BidPlaced(uint256 indexed recipeId, address indexed bidder, uint256 bidAmount);
+
+    // Emitted when the auction has been successfully finalized.
+    event AuctionEnded(uint256 indexed recipeId, address winner, uint256 finalPrice);
+
+    constructor() ERC721("Smoothie Recipe", "SMOOTHIE") Ownable(msg.sender) {}
+
+    // --- Admin Functions ---
+
+    // A crucial due diligence point: Only the contract owner can change these variables.
+    // This prevents malicious actors from manipulating auction parameters.
+    function setInitialRecipePrice(uint256 _newPrice) external onlyOwner {
+        initialRecipePrice = _newPrice;
+    }
+
+    // A due diligence point: The time limit can be updated for future auctions.
+    function setAuctionTimeLimit(uint256 _newTimeLimit) external onlyOwner {
+        auctionTimeLimit = _newTimeLimit;
+    }
+
+    // --- Core Functions ---
+
+    // This function allows a new user to register and get a sequential player ID.
+    function registerPlayer() external {
+        require(playerIDByAddress[msg.sender] == 0, "Player already registered");
+        playerIDByAddress[msg.sender] = nextPlayerId;
+        emit PlayerRegistered(msg.sender, nextPlayerId);
+        nextPlayerId++;
+    }
+
+    // This function mints a new NFT and starts a new auction for a smoothie recipe.
+    function createRecipe(
+        string memory _recipeName,
+        string memory _generalDescription,
+        string memory _brandName,
+        string memory _ipfsCID
+    ) external {
+        // Due diligence check: Player must be registered to create a recipe.
+        require(playerIDByAddress[msg.sender] > 0, "Player must be registered to create a recipe");
+
+        uint256 recipeId = nextRecipeId;
+        recipes[recipeId] = Recipe({
+            creatorPlayerId: playerIDByAddress[msg.sender],
+            recipeName: _recipeName,
+            generalDescription: _generalDescription,
+            brandName: _brandName,
+            ipfsCID: _ipfsCID
+        });
+
+        _safeMint(msg.sender, recipeId);
+        _setTokenURI(recipeId, _ipfsCID); // Using CID as a simple token URI
+
+        auctions[recipeId] = Auction({
+            recipeId: recipeId,
+            highestBidder: payable(address(0)),
+            highestBid: initialRecipePrice,
+            endTime: block.timestamp + auctionTimeLimit,
+            ended: false
+        });
+
+        emit AuctionCreated(recipeId, msg.sender, initialRecipePrice, auctions[recipeId].endTime);
+        nextRecipeId++;
+    }
+
+    // This function allows a user to bid on a recipe.
+    function placeBid(uint256 _recipeId) external payable {
+        Auction storage auction = auctions[_recipeId];
+
+        // Due diligence check: Ensure the auction is still active.
+        require(auction.endTime > block.timestamp, "Auction has ended");
+        require(msg.value > auction.highestBid, "Bid must be higher than the current bid");
+
+        // Refund the previous highest bidder.
+        if (auction.highestBidder != address(0)) {
+            auction.highestBidder.transfer(auction.highestBid);
+        }
+
+        auction.highestBidder = payable(msg.sender);
+        auction.highestBid = msg.value;
+        emit BidPlaced(_recipeId, msg.sender, msg.value);
+    }
+    
+    // The following two functions are for Chainlink Keeper integration.
+    // They are a due diligence point: They make the auction trustless by allowing
+    // Chainlink to automatically check if an auction is over and finalize it.
+    function checkUpkeep(bytes calldata /* checkData */) external view override returns (bool upkeepNeeded, bytes memory /* performData */) {
+        // This is a simple check; a more complex system might iterate through all active auctions.
+        // For this MVP, we will rely on the front-end to trigger the process.
+        upkeepNeeded = false;
+    }
+
+    function performUpkeep(bytes calldata /* performData */) external override {
+        // This is a simplified version for the MVP, a real implementation would
+        // be more robust and loop through all expired auctions.
+        // The front-end will call this to trigger finalization.
+    }
+    
+    // This is the function that is called to finalize the auction.
+    function finalizeAuction(uint256 _recipeId) external {
+        Auction storage auction = auctions[_recipeId];
+        require(block.timestamp >= auction.endTime, "Auction is not over yet");
+        require(!auction.ended, "Auction already finalized");
+        
+        auction.ended = true;
+
+        // If a bid was placed, transfer the NFT to the winner and the funds to the creator.
+        if (auction.highestBidder != address(0)) {
+            address creator = ownerOf(_recipeId);
+            _transfer(creator, auction.highestBidder, _recipeId);
+            payable(creator).transfer(auction.highestBid);
+            emit AuctionEnded(_recipeId, auction.highestBidder, auction.highestBid);
+        } else {
+            // If no bids were placed, burn the NFT.
+            _burn(_recipeId);
+            emit AuctionEnded(_recipeId, address(0), 0);
+        }
+    }
+}
