@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smoothie Mkt Web3</title>
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter font from Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+        .container {
+            max-width: 800px;
+        }
+        .card {
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1-px rgba(0, 0, 0, 0.06);
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-8 flex items-center justify-center min-h-screen">
+
+    <!-- Main Container -->
+    <div class="container mx-auto space-y-8">
+        <h1 class="text-4xl sm:text-5xl font-bold text-center text-gray-800">Smoothie Mkt Web3 🍹</h1>
+        
+        <!-- Admin7 Card -->
+        <div class="card p-4 text-center space-y-4">
+            <h2 class="text-xl font-semibold text-gray-800">Admin7: Setup Variables</h2>
+            <div class="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-8 text-sm sm:text-base">
+                <div class="flex items-center space-x-2">
+                    <p class="font-medium text-gray-700">Initial Price:</p>
+                    <input type="number" id="initialPriceInput" value="500" class="w-24 p-1 border rounded-md text-center">
+                    <span class="font-bold text-blue-600">XDC</span>
+                    <button id="setPriceBtn" class="bg-blue-500 text-white p-1 rounded-md text-xs">Set</button>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <p class="font-medium text-gray-700">Time Limit:</p>
+                    <input type="number" id="timeLimitInput" value="24" class="w-24 p-1 border rounded-md text-center">
+                    <span class="font-bold text-blue-600">hours</span>
+                    <button id="setTimeBtn" class="bg-blue-500 text-white p-1 rounded-md text-xs">Set</button>
+                </div>
+            </div>
+            <p class="text-xs text-gray-500">Note: This is a placeholder for a real admin function on the smart contract.</p>
+        </div>
+        
+        <div id="connect-section" class="flex flex-col items-center space-y-4">
+            <p class="text-center text-gray-600">
+                Connect your wallet to get started. Your User ID (Wallet Address) is: <span id="userIdDisplay" class="font-mono bg-gray-200 text-gray-800 px-2 py-1 rounded-full text-sm">Not Connected</span>
+            </p>
+            <p class="text-center text-gray-600">
+                Your Player ID is: <span id="playerIDDisplay" class="font-mono bg-gray-200 text-gray-800 px-2 py-1 rounded-full text-sm">Not Registered</span>
+            </p>
+            <p class="text-center text-red-500 hidden" id="error-message">Error: Please check the browser console for details.</p>
+            <button id="connectBtn" class="bg-blue-500 text-white font-bold py-3 px-6 rounded-md hover:bg-blue-600 transition duration-300">Connect Wallet & Register</button>
+        </div>
+
+        <div id="app-content" class="hidden space-y-8">
+            <!-- Create New Recipe Card -->
+            <div class="card p-6 sm:p-8">
+                <h2 class="text-2xl font-semibold mb-4 text-gray-800">Create a New Recipe</h2>
+                <div class="space-y-6">
+                    <div>
+                        <label for="recipeName" class="block text-gray-700 font-medium mb-1">Recipe Name</label>
+                        <input type="text" id="recipeName" placeholder="e.g., Green Goodness Smoothie" class="w-full p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-lime-500">
+                    </div>
+                    
+                    <!-- Base Liquids Section -->
+                    <div class="space-y-2">
+                        <h3 class="text-xl font-semibold text-gray-800">Base Liquids (4-6 oz)</h3>
+                        <div class="grid grid-cols-2 gap-2">
+                            <label class="flex items-center space-x-2"><input type="checkbox" name="baseLiquid" value="Green Tea"><span>Green Tea</span><span id="price-Green Tea" class="ml-2 text-gray-500 text-xs"></span></label>
+                            <label class="flex items-center space-x-2"><input type="checkbox" name="baseLiquid" value="Nettle Tea"><span>Nettle Tea</span><span id="price-Nettle Tea" class="ml-2 text-gray-500 text-xs"></span></label>
+                            <label class="flex items-center space-x-2"><input type="checkbox" name="baseLiquid" value="Licorice Tea"><span>Licorice Tea</span><span id="price-Licorice Tea" class="ml-2 text-gray-500 text-xs"></span></label>
+                        </div>
+                    </div>
+
+                    <!-- Juices Section -->
+                    <div class="space-y-2">
+                        <h3 class="text-xl font-semibold text-gray-800">Juices (2-4 oz, optional)</h3>
+                        <div class="grid grid-cols-2 gap-2">
+                            <label class="flex items-center space-x-2"><input type="checkbox" name="juice" value="Cranberry Juice"><span>Cranberry Juice</span><span id="price-Cranberry Juice" class="ml-2 text-gray-500 text-xs"></span></label>
+                            <label class="flex items-center space-x-2"><input type="checkbox" name="juice" value="Dark Cherry Juice"><span>Dark Cherry Juice</span><span id="price-Dark Cherry Juice" class="ml-2 text-gray-500 text-xs"></span></label>
+                            <label class="flex items-center space-x-2"><input type="checkbox" name="juice" value="Orange Juice"><span>Orange Juice</span><span id="price-Orange Juice" class="ml-2 text-gray-500 text-xs"></span></label>
+                            <label class="flex items-center space-x-2"><input type="checkbox" name="juice" value="Pomegranate Juice"><span>Pomegranate Juice</span><span id="price-Pomegranate Juice" class="ml-2 text-gray-500 text-xs"></span></label>
+                            <label class="flex items-center space-x-2"><input type="checkbox" name="juice" value="Purple Grape Juice"><span>Purple Grape Juice</span><span id="price-Purple Grape Juice" class="ml-2 text-gray-500 text-xs"></span></label>
+                        </div>
+                    </div>
+
+                    <!-- Fruits Section -->
+                    <div class="space-y-2">
+                        <h3 class="text-xl font-semibold text-gray-800">Fruit (1/2 cup)</h3>
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                            <label class="flex items-center space-x-2"><input type="checkbox" name="fruit" value="Apple"><span>Apple</span><span id="price-Apple" class="ml-2 text-gray-500 text-xs"></span></label>
+                            <label class="flex items-center space-x-2"><input type="checkbox" name="fruit" value="Banana"><span>Banana</span><span id="price-Banana" class="ml-2 text-gray-500 text-xs"></span></label>
+                            <label class="flex items-center space-x-2"><input type="checkbox" name="fruit" value="Berries"><span>Berries</span><span id="price-Berries" class="ml-2 text-gray-500 text-xs"></span></label>
+                            <label class="flex items-center space-x-2"><input type="checkbox" name="fruit" value="Mango"><span>Mango</span><span id="price-Mango" class="ml-2 text-gray-500 text-xs"></span></label>
+                            <label class="flex items-center space-x-2"><input type="checkbox" name="fruit" value="Melon"><span>Melon</span><span id="price-Melon" class="ml-2 text-gray-500 text-xs"></span></label>
+                            <label class="flex items-center space-x-2"><input type="checkbox" name="fruit" value="Peach"><span>Peach</span><span id="price-Peach" class="ml-2 text-gray-500 text-xs"></span></label>
+                            <label class="flex items-center space-x-2"><input type="checkbox" name="fruit" value="Pear"><span>Pear</span><span id="price-Pear" class="ml-2 text-gray-500 text-xs"></span></label>
+                            <label class="flex items-center space-x-2"><input type="checkbox" name="fruit" value="Pineapple"><span>Pineapple</span><span id="price-Pineapple" class="ml-2 text-gray-500 text-xs"></span></label>
+                        </div>
+                    </div>
+
+                    <!-- Vegetables Section -->
+                    <div class="space-y-2">
+                        <h3 class="text-xl font-semibold text-gray-800">Vegetables (1 cup)</h3>
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                            <label class="flex items-center space-x-2"><input type="checkbox" name="vegetable" value="Avocado"><span>Avocado</span><span id="price-Avocado" class="ml-2 text-gray-500 text-xs"></span></label>
+                            <label class="flex items-center space-x-2"><input type="checkbox" name="vegetable" value="Beet"><span>Beet</span><span id="price-Beet" class="ml-2 text-gray-500 text-xs"></span></label>
+                            <label class="flex items-center space-x-2"><input type="checkbox" name="vegetable" value="Cucumber"><span>Cucumber</span><span id="price-Cucumber" class="ml-2 text-gray-500 text-xs"></span></label>
+                            <label class="flex items-center space-x-2"><input type="checkbox" name="vegetable" value="Dark leafy greens"><span>Dark leafy greens</span><span id="price-Dark leafy greens" class="ml-2 text-gray-500 text-xs"></span></label>
+                            <label class="flex items-center space-x-2"><input type="checkbox" name="vegetable" value="Mint leaves"><span>Mint leaves</span><span id="price-Mint leaves" class="ml-2 text-gray-500 text-xs"></span></label>
+                            <label class="flex items-center space-x-2"><input type="checkbox" name="vegetable" value="Zucchini"><span>Zucchini</span><span id="price-Zucchini" class="ml-2 text-gray-500 text-xs"></span></label>
+                        </div>
+                    </div>
+
+                    <!-- Protein Section -->
+                    <div class="space-y-2">
+                        <h3 class="text-xl font-semibold text-gray-800">Protein</h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <label class="flex items-center space-x-2"><input type="radio" name="protein" value="Protein powder - 1 scoop"><span>Protein powder - 1 scoop</span><span id="price-Protein powder - 1 scoop" class="ml-2 text-gray-500 text-xs"></span></label>
+                            <label class="flex items-center space-x-2"><input type="radio" name="protein" value="Whey powder - 2 T"><span>Whey powder - 2 T</span><span id="price-Whey powder - 2 T" class="ml-2 text-gray-500 text-xs"></span></label>
+                            <label class="flex items-center space-x-2"><input type="radio" name="protein" value="Whole oats - 1/2 C"><span>Whole oats - 1/2 C</span><span id="price-Whole oats - 1/2 C" class="ml-2 text-gray-500 text-xs"></span></label>
+                            <label class="flex items-center space-x-2"><input type="radio" name="protein" value="Nut butter - 1 T"><span>Nut butter - 1 T</span><span id="price-Nut butter - 1 T" class="ml-2 text-gray-500 text-xs"></span></label>
+                            <label class="flex items-center space-x-2"><input type="radio" name="protein" value="Yogurt or kefir - 1/2 C"><span>Yogurt or kefir - 1/2 C</span><span id="price-Yogurt or kefir - 1/2 C" class="ml-2 text-gray-500 text-xs"></span></label>
+                            <label class="flex items-center space-x-2"><input type="radio" name="protein" value="Soy powder - 2 T"><span>Soy powder - 2 T</span><span id="price-Soy powder - 2 T" class="ml-2 text-gray-500 text-xs"></span></label>
+                        </div>
+                    </div>
+
+                    <!-- Additional Ingredients Section -->
+                    <div class="space-y-2">
+                        <h3 class="text-xl font-semibold text-gray-800">Additional Ingredients</h3>
+                        <div class="grid grid-cols-2 gap-2">
+                            <label class="flex items-center space-x-2"><input type="checkbox" name="additional" value="Flax Seeds"><span>Flax Seeds (1-2 T)</span><span id="price-Flax Seeds" class="ml-2 text-gray-500 text-xs"></span></label>
+                            <label class="flex items-center space-x-2"><input type="checkbox" name="additional" value="Ice"><span>Ice (1/4 - 1/2 cup)</span><span id="price-Ice" class="ml-2 text-gray-500 text-xs"></span></label>
+                        </div>
+                    </div>
+
+                    <button id="createRecipeBtn" class="w-full bg-lime-500 text-white font-bold py-3 rounded-md hover:bg-lime-600 transition duration-300">Create Recipe</button>
+                </div>
+            </div>
+            
+            <!-- Total Cost Display Card -->
+            <div class="card p-6 sm:p-8 text-center" id="totalCostCard">
+                <h2 class="text-2xl font-semibold mb-2 text-gray-800">Total Recipe Cost</h2>
+                <p id="totalRecipeCost" class="text-4xl font-bold text-green-600">Calculating...</p>
+            </div>
+
+            <!-- Auction Listings Card -->
+            <div class="card p-6 sm:p-8">
+                <h2 class="text-2xl font-semibold mb-4 text-gray-800">Available Recipes</h2>
+                <div id="recipesContainer" class="space-y-6">
+                    <!-- Recipes will be dynamically added here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Web3 Libraries -->
+    <script src="https://cdn.ethers.io/5.7.0/ethers.umd.min.js"></script>
+    <script src="https://unpkg.com/axios@1.6.2/dist/axios.min.js"></script>
+
+    <script type="module">
+        // --- Web3 Configuration (ACTION REQUIRED: REPLACE THESE PLACEHOLDERS) ---
+        // You MUST replace these values with the details of your deployed smart contract.
+        
+        // 1. Due Diligence: Replace with the address of your deployed SmoothieAuction.sol contract.
+        const CONTRACT_ADDRESS = "0x...";
+        
+        // 2. Due Diligence: Replace with the ABI (Application Binary Interface) of your deployed contract.
+        // You can get this from Remix after compiling your contract.
+        const CONTRACT_ABI = [];
+
+        // --- UI Elements ---
+        const userIdDisplay = document.getElementById('userIdDisplay');
+        const playerIDDisplay = document.getElementById('playerIDDisplay');
+        const connectBtn = document.getElementById('connectBtn');
+        const createRecipeBtn = document.getElementById('createRecipeBtn');
+        const recipesContainer = document.getElementById('recipesContainer');
+        const errorMessageDiv = document.getElementById('error-message');
+        const appContent = document.getElementById('app-content');
+        
+        const setPriceBtn = document.getElementById('setPriceBtn');
+        const setTimeBtn = document.getElementById('setTimeBtn');
+        const initialPriceInput = document.getElementById('initialPriceInput');
+        const timeLimitInput = document.getElementById('timeLimitInput');
+
+        // --- Global Variables ---
+        let signer;
+        let contract;
+        let userAddress;
+        let playerID;
+
+        // --- Main Functions ---
+        async function connectWalletAndRegister() {
+             // Due Diligence: Check for the presence of XDCpay object in the browser.
+             if (typeof window.ethereum !== 'undefined' && window.ethereum.isXDCpay) {
+                try {
+                    connectBtn.textContent = "Connecting...";
+                    connectBtn.disabled = true;
+                    
+                    const provider = new ethers.providers.Web3Provider(window.ethereum, "any");
+                    await provider.send("eth_requestAccounts", []);
+                    signer = provider.getSigner();
+                    userAddress = await signer.getAddress();
+                    userIdDisplay.textContent = userAddress;
+
+                    // Due Diligence: Initialize the contract with the correct address and ABI.
+                    // This is a critical step that must be done with your deployed contract's values.
+                    contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+                    
+                    // Due Diligence: Check if the player is registered on-chain.
+                    // This is how we maintain the sequential player ID.
+                    playerID = await contract.playerIDByAddress(userAddress);
+                    if (playerID.toString() === "0") {
+                        await registerPlayer();
+                    } else {
+                        playerIDDisplay.textContent = playerID.toString();
+                    }
+                    
+                    // Due Diligence: Listen for contract events to update the UI in real-time.
+                    // This is what makes the application truly decentralized and reactive.
+                    contract.on("AuctionCreated", (recipeId, highestBid, endTime) => {
+                        console.log("New auction created:", recipeId.toString());
+                        fetchAndRenderRecipes();
+                    });
+                    
+                    contract.on("BidPlaced", (recipeId, bidder, bidAmount) => {
+                        console.log("Bid placed on recipe:", recipeId.toString());
+                        fetchAndRenderRecipes();
+                    });
+                    
+                    // Show app content and fetch data
+                    appContent.classList.remove('hidden');
+                    document.getElementById('connect-section').classList.add('hidden');
+                    fetchAndRenderRecipes();
+                    await updateUICosts();
+
+                    // Due Diligence: Add event listeners for real-time cost updates.
+                    // This ensures the total cost is recalculated as the user selects ingredients.
+                    const allInputs = document.querySelectorAll('input[name="baseLiquid"], input[name="juice"], input[name="fruit"], input[name="vegetable"], input[name="protein"], input[name="additional"]');
+                    allInputs.forEach(input => {
+                        input.addEventListener('change', updateUICosts);
+                    });
+
+                } catch (error) {
+                    console.error("XDCpay connection failed:", error);
+                    errorMessageDiv.textContent = `Error: ${error.message}`;
+                    errorMessageDiv.classList.remove('hidden');
+                    connectBtn.textContent = "Connect Wallet & Register";
+                    connectBtn.disabled = false;
+                }
+            } else {
+                errorMessageDiv.textContent = 'XDCpay not detected. Please install and configure it.';
+                errorMessageDiv.classList.remove('hidden');
+            }
+        }
+
+        async function registerPlayer() {
+            try {
+                playerIDDisplay.textContent = "Registering...";
+                // Due Diligence: Call the smart contract to register a new player.
+                const tx = await contract.registerPlayer();
+                await tx.wait();
+                playerID = await contract.playerIDByAddress(userAddress);
+                playerIDDisplay.textContent = playerID.toString();
+                console.log("Player registered with ID:", playerID.toString());
+            } catch (error) {
+                console.error("Player registration failed:", error);
+                errorMessageDiv.textContent = `Registration failed: ${error.message}`;
+                errorMessageDiv.classList.remove('hidden');
+            }
+        }
+        
+        // This function makes a secure call to the Vercel serverless function to get pricing data.
+        async function getPricesFromBackend() {
+            // Due Diligence: This is the secure way to get prices. The frontend doesn't need
+            // to know how the data is fetched (e.g., from Chainlink Functions).
+            try {
+                const response = await axios.get('/api/get-prices');
+                return response.data;
+            } catch (error) {
+                console.error("Error fetching prices from backend:", error);
+                return {}; // Return an empty object on error
+            }
+        }
+        
+        async function updateUICosts() {
+            document.getElementById('totalRecipeCost').textContent = "Calculating...";
+            const prices = await getPricesFromBackend();
+            let totalPrice = 0;
+            const allInputs = document.querySelectorAll('input[name="baseLiquid"], input[name="juice"], input[name="fruit"], input[name="vegetable"], input[name="protein"], input[name="additional"]');
+            
+            for (const input of allInputs) {
+                const ingredientName = input.value;
+                const priceElement = document.getElementById(`price-${ingredientName}`);
+                const price = prices[ingredientName] || 0;
+                
+                if (priceElement) {
+                    priceElement.textContent = `($${price.toFixed(2)})`;
+                }
+                
+                if (input.checked) {
+                    totalPrice += price;
+                }
+            }
+            document.getElementById('totalRecipeCost').textContent = `$${totalPrice.toFixed(2)}`;
+        }
+
+        async function createRecipe() {
+            const name = document.getElementById('recipeName').value.trim();
+            if (!name) return alert('Please provide a recipe name.');
+
+            const baseLiquids = Array.from(document.querySelectorAll('input[name="baseLiquid"]:checked')).map(el => el.value);
+            const juices = Array.from(document.querySelectorAll('input[name="juice"]:checked')).map(el => el.value);
+            const fruits = Array.from(document.querySelectorAll('input[name="fruit"]:checked')).map(el => el.value);
+            const vegetables = Array.from(document.querySelectorAll('input[name="vegetable"]:checked')).map(el => el.value);
+            const protein = document.querySelector('input[name="protein"]:checked')?.value || null;
+            const additional = Array.from(document.querySelectorAll('input[name="additional"]:checked')).map(el => el.value);
+            const selectedIngredients = [...baseLiquids, ...juices, ...fruits, ...vegetables, protein, ...additional].filter(Boolean);
+
+            if (!signer) return alert("Please connect your wallet first.");
+
+            createRecipeBtn.textContent = 'Creating...';
+            createRecipeBtn.disabled = true;
+
+            try {
+                // Due Diligence: Make a single, secure request to the serverless function.
+                // This request sends the private data to be processed and stored securely.
+                const serverlessResponse = await axios.post('/api/create-recipe', {
+                    recipeName: name,
+                    ingredients: selectedIngredients,
+                    privateData: {
+                        ingredients: { baseLiquids, juices, fruits, vegetables, protein, additional }
+                    }
+                });
+
+                const { generalDescription, brandName, ipfsCID } = serverlessResponse.data;
+
+                // Due Diligence: Call the smart contract to mint the NFT and start the auction.
+                // This is a core Web3 transaction that creates the on-chain record.
+                const tx = await contract.createRecipe(
+                    name,
+                    generalDescription,
+                    brandName,
+                    ipfsCID
+                );
+                await tx.wait();
+                
+                alert('Recipe created successfully! The auction will begin.');
+                document.getElementById('recipeName').value = '';
+                document.querySelectorAll('input[type="checkbox"]:checked').forEach(el => el.checked = false);
+                document.querySelectorAll('input[type="radio"]:checked').forEach(el => el.checked = false);
+                updateUICosts(); // Recalculate and display the total cost
+
+            } catch (error) {
+                console.error("Error creating recipe:", error);
+                errorMessageDiv.textContent = `Error: ${error.message}`;
+                errorMessageDiv.classList.remove('hidden');
+            } finally {
+                createRecipeBtn.textContent = 'Create Recipe';
+                createRecipeBtn.disabled = false;
+            }
+        }
+        
+        async function handleBid(recipeId, currentBid) {
+            const bidAmount = prompt(`Enter your bid in XDC (Current Bid: ${currentBid} XDC):`);
+            if (isNaN(bidAmount) || parseFloat(bidAmount) <= parseFloat(currentBid)) {
+                return alert('Please enter a valid bid that is higher than the current bid.');
+            }
+            try {
+                // Due Diligence: Call the smart contract to place a bid.
+                const bidInWei = ethers.utils.utils.parseEther(bidAmount);
+                const tx = await contract.placeBid(recipeId, { value: bidInWei });
+                await tx.wait();
+                alert('Bid placed successfully!');
+            } catch (error) {
+                console.error("Bidding failed:", error);
+                errorMessageDiv.textContent = `Bidding failed: ${error.message}`;
+                errorMessageDiv.classList.remove('hidden');
+            }
+        }
+        
+        async function fetchAndRenderRecipes() {
+            try {
+                const totalRecipes = await contract.nextRecipeId();
+                const recipes = [];
+                for (let i = 1; i < totalRecipes.toNumber(); i++) {
+                    const auction = await contract.auctions(i);
+                    const onChainData = await contract.recipes(i);
+                    
+                    // Due Diligence: Fetch off-chain data from IPFS using the CID.
+                    // This is how we retrieve the private data securely.
+                    const ipfsUrl = `https://gateway.pinata.cloud/ipfs/${onChainData.ipfsCID}`;
+                    const response = await axios.get(ipfsUrl);
+                    const privateData = response.data;
+                    
+                    recipes.push({
+                        recipeId: i,
+                        name: onChainData.recipeName,
+                        creatorPlayerId: onChainData.creatorPlayerId.toString(),
+                        currentBid: ethers.utils.formatEther(auction.highestBid),
+                        bidderAddress: auction.highestBidder,
+                        isSold: auction.ended,
+                        generalDescription: onChainData.generalDescription,
+                        privateDescription: privateData.privateDescription,
+                        brandName: onChainData.brandName,
+                        totalPrice: privateData.totalPrice,
+                        ipfsCID: onChainData.ipfsCID,
+                        id: i
+                    });
+                }
+                renderRecipes(recipes);
+            } catch (error) {
+                console.error("Error fetching recipes from contract:", error);
+            }
+        }
+
+        function renderRecipes(recipes) {
+            recipesContainer.innerHTML = '';
+            if (recipes.length === 0) {
+                recipesContainer.innerHTML = '<p class="text-center text-gray-500">No recipes available. Be the first to create one!</p>';
+                return;
+            }
+            
+            recipes.sort((a, b) => b.currentBid - a.currentBid);
+
+            recipes.forEach(recipe => {
+                const recipeCard = document.createElement('div');
+                recipeCard.className = `p-6 card transition-transform transform ${recipe.isSold ? 'opacity-50' : ''}`;
+                
+                let bidInfoHtml = '';
+                if (recipe.isSold) {
+                    bidInfoHtml = `<p class="text-sm font-semibold text-red-600">SOLD! Final price: ${recipe.currentBid} XDC</p>`;
+                } else if (parseFloat(recipe.currentBid) > 0) {
+                    bidInfoHtml = `<p class="text-sm text-gray-600">Current Bid: <span class="font-bold text-lg text-green-600">${recipe.currentBid} XDC</span> by ${recipe.bidderAddress.substring(0, 6)}...</p>`;
+                } else {
+                    bidInfoHtml = `<p class="text-sm text-gray-500">No bids yet.</p>`;
+                }
+                
+                const disclosureHtml = `
+                    <div class="space-y-4">
+                        <div>
+                            <h4 class="text-md font-bold text-gray-700">General Description</h4>
+                            <p class="text-sm text-gray-600">${recipe.generalDescription}</p>
+                        </div>
+                        <div>
+                            <h4 class="text-md font-bold text-gray-700">Private Description</h4>
+                            <p class="text-sm text-gray-600 whitespace-pre-wrap mb-2">${recipe.privateDescription}</p>
+                            <p class="text-sm font-bold text-gray-700 mt-2">Total Smoothie Cost: <span class="text-green-600">$${recipe.totalPrice ? recipe.totalPrice.toFixed(2) : '0.00'}</span></p>
+                        </div>
+                    </div>
+                `;
+
+                recipeCard.innerHTML = `
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="text-xl font-bold text-gray-900">${recipe.name}</h3>
+                        <span class="text-sm font-bold text-gray-500">#${recipe.recipeId}</span>
+                    </div>
+                    ${disclosureHtml}
+                    <p class="text-xs text-gray-500 mt-4 mb-2">Creator Player ID: ${recipe.creatorPlayerId}</p>
+                    ${bidInfoHtml}
+                    ${!recipe.isSold ? `
+                        <div class="mt-4 flex flex-col sm:flex-row gap-2">
+                            <button class="bid-btn w-full bg-blue-500 text-white font-semibold py-2 rounded-md hover:bg-blue-600 transition duration-300" data-id="${recipe.id}" data-bid="${recipe.currentBid}">Place Bid</button>
+                        </div>
+                    ` : ''}
+                `;
+
+                if (!recipe.isSold) {
+                    recipeCard.querySelector('.bid-btn').addEventListener('click', () => handleBid(recipe.id, recipe.currentBid));
+                }
+
+                recipesContainer.appendChild(recipeCard);
+            });
+        }
+        
+        async function setInitialPrice() {
+            const newPrice = parseFloat(initialPriceInput.value);
+            if (isNaN(newPrice) || newPrice <= 0) {
+                return alert("Please enter a valid price.");
+            }
+            try {
+                const tx = await contract.setInitialRecipePrice(ethers.utils.parseEther(newPrice.toString()));
+                await tx.wait();
+                alert(`Initial price set to ${newPrice} XDC.`);
+            } catch (error) {
+                console.error("Failed to set price:", error);
+                alert("Failed to set price. Check the console for details.");
+            }
+        }
+        
+        async function setTimeLimit() {
+            const newTime = parseFloat(timeLimitInput.value);
+            if (isNaN(newTime) || newTime <= 0) {
+                return alert("Please enter a valid time limit.");
+            }
+            try {
+                // Time limit in hours must be converted to seconds for the smart contract.
+                const tx = await contract.setAuctionTimeLimit(newTime * 60 * 60);
+                await tx.wait();
+                alert(`Time limit set to ${newTime} hours.`);
+            } catch (error) {
+                console.error("Failed to set time limit:", error);
+                alert("Failed to set time limit. Check the console for details.");
+            }
+        }
+        
+        // --- Event Listeners ---
+        connectBtn.addEventListener('click', connectWalletAndRegister);
+        createRecipeBtn.addEventListener('click', createRecipe);
+        setPriceBtn.addEventListener('click', setInitialPrice);
+        setTimeBtn.addEventListener('click', setTimeLimit);
+
+        // Initialize the app on page load
+        window.addEventListener('load', async () => {
+            // Due Diligence: Check if XDCpay is already connected. If so, go straight to the app.
+            if (window.ethereum && window.ethereum.isXDCpay && window.ethereum.selectedAddress) {
+                connectWalletAndRegister();
+            }
+            await updateUICosts();
+        });
+    </script>
+</body>
+</html>
